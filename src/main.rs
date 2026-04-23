@@ -4,8 +4,8 @@ mod infra;
 mod services;
 use api::setup_routes;
 use dotenvy::dotenv;
-use infra::db::init_db_pool;
-use infra::http_server::run_http_server;
+use infra::utils::db::init_db_pool;
+use infra::utils::http_server::run_http_server;
 
 #[tokio::main]
 async fn main() {

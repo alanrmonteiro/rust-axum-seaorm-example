@@ -1,4 +1,4 @@
-use crate::{api::handlers::task::CreateTaskRequest, infra::error::AppError};
+use crate::{api::handlers::task::CreateTaskRequest, infra::utils::error::AppError};
 
 pub fn validate_request(req: &CreateTaskRequest) -> Result<(), AppError> {
     req.priority

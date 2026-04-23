@@ -9,7 +9,7 @@ use serde::Deserialize;
 use crate::api::handlers::task::adapters::to_create_task_response;
 use crate::api::handlers::task::adapters::to_get_task_response;
 use crate::api::handlers::task::request_validation::validate_request;
-use crate::infra::error::AppError;
+use crate::infra::utils::error::AppError;
 use crate::services::task::{
     get_task_by_id, hard_remove_task_by_id, sorft_remove_task_by_id, update_task,
 };
@@ -30,7 +30,7 @@ pub struct CreateTaskResponse {
     pub description: Option<String>,
 }
 
-#[derive(serde::Serialize, Debug)]
+#[derive(serde::Serialize, Debug, PartialEq, Deserialize)]
 pub struct GetTaskResponse {
     pub id: i32,
     pub priority: Option<String>,
@@ -74,7 +74,7 @@ pub async fn get_all_tasks(
     Extension(db_conn): Extension<DatabaseConnection>,
     Query(filter): Query<TaskFilter>,
 ) -> Result<Json<Vec<GetTaskResponse>>, AppError> {
-    let tasks = list_tasks_by_filter(&db_conn, filter).await?;
+    let tasks: Vec<crate::domain::tasks::Model> = list_tasks_by_filter(&db_conn, filter).await?;
     let tasks_response = tasks.into_iter().map(to_get_task_response).collect();
     Ok(Json(tasks_response))
 }
@@ -86,6 +86,14 @@ pub async fn put_task(
 ) -> Result<Json<GetTaskResponse>, AppError> {
     validate_request(&req)?;
     let task = update_task(&db_conn, task_id, req).await?;
+    Ok(Json(to_get_task_response(task)))
+}
+
+pub async fn link_user_to_task(
+    Path((user_id, task_id)): Path<(i32, i32)>,
+    Extension(db_conn): Extension<DatabaseConnection>,
+) -> Result<Json<GetTaskResponse>, AppError> {
+    let task = crate::services::task::link_user_to_task(&db_conn, user_id, task_id).await?;
     Ok(Json(to_get_task_response(task)))
 }
 

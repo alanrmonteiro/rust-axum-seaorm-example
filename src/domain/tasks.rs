@@ -1,5 +1,6 @@
 use sea_orm::ColumnTrait;
 use sea_orm::entity::prelude::*;
+use std::fmt::Display;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "tasks")]
 pub struct Model {
