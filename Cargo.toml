@@ -6,20 +6,22 @@ edition = "2024"
 [dependencies]
 dotenvy = "0.15.7"
 dotenvy_macro = "0.15.7"
-sea-orm = { version = "1.1.19", features = [
+sea-orm = { version = "1.1.20", features = [
     "runtime-tokio-rustls",
     "sqlx-postgres",
     "sqlx-sqlite",
 ] }
-tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
-axum = "0.8.8"
-axum-extra = { version = "0.12.5", features = ["typed-header"] }
+tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread", "full"] }
+axum = "0.8.9"
+axum-extra = { version = "0.12.6", features = ["typed-header"] }
 headers = "0.4.1"
 serde = { version = "1.0.228", features = ["derive"] }
-tower-http = { version = "0.6.8", features = ["cors"] }
+tower-http = { version = "0.6.11", features = ["cors"] }
 validator = { version = "0.20.0", features = ["derive"] }
 thiserror = "2.0.18"
 chrono = "0.4.44"
 axum-test = { version = "20.0.0", features = ["assert-json-diff"] }
-serde_json = "1.0.149"
-reqwest = "0.13.2"
+serde_json = "1.0.150"
+reqwest = "0.13.3"
+jsonwebtoken = "10.4.0"
+jwks = "0.5"

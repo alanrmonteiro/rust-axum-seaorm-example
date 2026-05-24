@@ -1,11 +1,13 @@
 pub mod handlers;
+
+use std::sync::Arc;
+
 use axum::{
-    Extension, Router,
+    Router,
     http::Method,
     routing::{delete, get, post, put},
 };
 
-use sea_orm::DatabaseConnection;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::api::handlers::task::{
@@ -13,8 +15,9 @@ use crate::api::handlers::task::{
     soft_delete_by_id,
 };
 use crate::api::handlers::user::create_user;
+use crate::infra::auth::auth::AppState;
 
-pub fn setup_routes(db_conn: DatabaseConnection) -> Router {
+pub fn setup_routes(app_state: Arc<AppState>) -> Router {
     let cors = build_cors_layer();
 
     Router::new()
@@ -26,8 +29,8 @@ pub fn setup_routes(db_conn: DatabaseConnection) -> Router {
         .route("/task/{id}", delete(soft_delete_by_id))
         .route("/task/user/{user_id}/{task_id}", put(link_user_to_task))
         .route("/user", post(create_user))
-        .layer(Extension(db_conn))
         .layer(cors)
+        .with_state(app_state)
 }
 
 pub fn build_cors_layer() -> CorsLayer {
