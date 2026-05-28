@@ -11,7 +11,7 @@ use serde::Deserialize;
 use crate::api::handlers::task::adapters::to_create_task_response;
 use crate::api::handlers::task::adapters::to_get_task_response;
 use crate::api::handlers::task::request_validation::validate_request;
-use crate::infra::auth::auth::{AppState, AuthUser};
+use crate::infra::auth::auth::{Admin, AppState, AuthUser, HasRole};
 use crate::infra::utils::error::AppError;
 use crate::services::task::{
     get_task_by_id, hard_remove_task_by_id, sorft_remove_task_by_id, update_task,
@@ -57,11 +57,12 @@ pub struct DeleteTaskResponse {
 }
 
 pub async fn create_task(
-    Extension(db_conn): Extension<DatabaseConnection>,
+    State(state): State<Arc<AppState>>,
+    HasRole(_auth_user, _): HasRole<Admin>,
     Json(req): Json<CreateTaskRequest>,
 ) -> Result<Json<CreateTaskResponse>, AppError> {
     validate_request(&req)?;
-    let task = create_task_service(&db_conn, req).await?;
+    let task = create_task_service(&state.db_conn, req).await?;
     Ok(Json(to_create_task_response(task)))
 }
 

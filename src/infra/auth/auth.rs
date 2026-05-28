@@ -9,11 +9,67 @@ use jwks::Jwks;
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 
+pub trait Role {
+    fn name() -> &'static str;
+}
+
+// Marcadores de Tipo (Zero-Sized Types)
+pub struct Admin;
+impl Role for Admin {
+    fn name() -> &'static str {
+        "admin"
+    } // Nome da Role igualzinho ao configurado no Keycloak
+}
+
+pub struct UserRole;
+impl Role for UserRole {
+    fn name() -> &'static str {
+        "user"
+    }
+}
+
+// O nosso extrator modular
+pub struct HasRole<R: Role>(pub AuthUser, pub std::marker::PhantomData<R>);
+
+impl<S, R> FromRequestParts<S> for HasRole<R>
+where
+    S: Send + Sync + AsRef<AppState>,
+    R: Role + Send + Sync,
+{
+    type Rejection = Response;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        // 1. Executa o extrator do AuthUser padrão para validar o JWT
+        let auth_user = AuthUser::from_request_parts(parts, state).await?;
+
+        // 2. Inspeciona as roles que o Keycloak injetou no realm_access
+        let target_role = R::name();
+        if auth_user
+            .0
+            .realm_access
+            .roles
+            .iter()
+            .any(|r| r == target_role)
+        {
+            // Se o usuário tiver a role, autoriza a requisição!
+            Ok(HasRole(auth_user, std::marker::PhantomData))
+        } else {
+            // Se não tiver, barra imediatamente com 403 Forbidden
+            Err((StatusCode::FORBIDDEN, "Acesso negado: Role insuficiente").into_response())
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct Claims {
-    pub _sub: String,
-    pub _roles: Vec<String>, // Mapeado do Keycloak
-    pub _exp: usize,
+    pub sub: String,
+    pub exp: usize,
+    pub realm_access: RealmAccess, // Estrutura padrão do Keycloak
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct RealmAccess {
+    pub roles: Vec<String>,
 }
 
 pub struct AuthUser(pub Claims);

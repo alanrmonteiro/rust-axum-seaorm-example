@@ -7,6 +7,9 @@ services:
     restart: unless-stopped
     ports:
       - "5432:5432"
+    networks:
+      - keycloak_network
+
     environment:
       POSTGRES_DB: app_db
       POSTGRES_USER: app_user
@@ -16,10 +19,38 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app_user -d app_db"]
+      test: [ "CMD-SHELL", "pg_isready -U app_user -d app_db" ]
       interval: 10s
       timeout: 5s
       retries: 5
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: keycloak_server
+    command: start-dev
+    environment:
+      # Configurações do Administrador Inicial
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
 
+      # Configurações de Banco de Dados (Ligando ao serviço Postgres acima)
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/app_db
+      KC_DB_USERNAME: app_user
+      KC_DB_PASSWORD: app_password
+
+      # Configurações de Funcionalidades (Opcional, mas útil para desenvolvimento)
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - keycloak_network
 volumes:
   postgres_data:
+
+networks:
+  keycloak_network:
+    driver: bridge
